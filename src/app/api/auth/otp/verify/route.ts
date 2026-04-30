@@ -7,6 +7,7 @@ import { SignJWT } from 'jose';
 const verifyOtpSchema = z.object({
   name: z.string().min(1).optional(),
   phone: z.string().min(10).max(15),
+  dob: z.string().optional(),
   otp: z.string().length(4)
 });
 
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
     }
 
-    const { name, phone, otp } = result.data;
+    const { name, phone, dob, otp } = result.data;
 
     // Verify OTP from DB
     const otps = await query<any[]>(
@@ -45,15 +46,27 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Name is required for new users' }, { status: 400 });
       }
       const insertResult = await query<any>(
-        `INSERT INTO users (name, phone) VALUES (?, ?)`,
-        [name, phone]
+        `INSERT INTO users (name, phone, dob) VALUES (?, ?, ?)`,
+        [name, phone, dob]
       );
       userId = insertResult.insertId;
     } else {
       userId = users[0].id;
-      // Optionally update name if provided
-      if (name) {
-        await query(`UPDATE users SET name = ? WHERE id = ?`, [name, userId]);
+      // Optionally update name/dob if provided
+      if (name || dob) {
+        let updateSql = 'UPDATE users SET ';
+        const params: any[] = [];
+        if (name) {
+          updateSql += 'name = ?, ';
+          params.push(name);
+        }
+        if (dob) {
+          updateSql += 'dob = ?, ';
+          params.push(dob);
+        }
+        updateSql = updateSql.slice(0, -2) + ' WHERE id = ?';
+        params.push(userId);
+        await query(updateSql, params);
       }
     }
 

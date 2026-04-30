@@ -17,12 +17,12 @@ export async function POST(req: Request) {
 
     const { traits } = result.data;
     
-    // Convert traits to a comma separated string to match rules, or a predictable format
-    // Simple approach: Sort traits alphabetically and join with comma
-    const traitCombination = traits.sort().join(',');
+    // Join traits in order to maintain Behavior, Destination, Aspiration hierarchy
+    const traitCombination = traits.join(',');
 
-    // Find rule matching trait_combination exactly or with LIKE
-    const rules = await query<any[]>(
+    // Find rule matching trait_combination
+    // Rules in DB should follow "Behavior,Destination,Aspiration"
+    let rules = await query<any[]>(
       `SELECT r.assigned_bike_id, b.model_name, b.type, b.description, b.image_url 
        FROM rules r 
        JOIN bikes b ON r.assigned_bike_id = b.id
@@ -30,17 +30,30 @@ export async function POST(req: Request) {
       [traitCombination]
     );
 
+    // If no exact match, try matching just the first two (Behavior, Destination)
+    if (rules.length === 0) {
+      const partialCombination = traits.slice(0, 2).join(',') + '%';
+      rules = await query<any[]>(
+        `SELECT r.assigned_bike_id, b.model_name, b.type, b.description, b.image_url 
+         FROM rules r 
+         JOIN bikes b ON r.assigned_bike_id = b.id
+         WHERE r.trait_combination LIKE ? LIMIT 1`,
+        [partialCombination]
+      );
+    }
+
     let assignedBike;
 
     if (rules.length > 0) {
       assignedBike = rules[0];
     } else {
-      // Fallback: pick a default bike or random bike
-      const fallbackBikes = await query<any[]>('SELECT id as assigned_bike_id, model_name, type, description, image_url FROM bikes LIMIT 1');
+      // Fallback: pick a default bike (e.g. R15)
+      const fallbackBikes = await query<any[]>('SELECT id as assigned_bike_id, model_name, type, description, image_url FROM bikes WHERE model_name LIKE "%R15%" LIMIT 1');
       if (fallbackBikes.length > 0) {
         assignedBike = fallbackBikes[0];
       } else {
-        return NextResponse.json({ error: 'No bikes configured in the system' }, { status: 500 });
+        const anyBike = await query<any[]>('SELECT id as assigned_bike_id, model_name, type, description, image_url FROM bikes LIMIT 1');
+        assignedBike = anyBike[0];
       }
     }
 

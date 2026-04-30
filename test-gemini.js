@@ -19,12 +19,12 @@ async function testGemini() {
   try {
     console.log('Testing image generation...');
     const imgRes = await client.models.generateImages({
-      model: process.env.AI_IMAGE_MODEL || 'gemini-3.1-flash-image-preview',
+      model: process.env.AI_IMAGE_MODEL || 'imagen-4.0-generate-001',
       prompt: 'A cinematic photo of a red yamaha motorcycle in a city.',
       config: {
         numberOfImages: 1,
         outputMimeType: 'image/jpeg',
-        aspectRatio: '4:5',
+        aspectRatio: '3:4',
       }
     });
     console.log('Image OK, base64 length:', imgRes.generatedImages?.[0]?.image?.imageBytes?.length);

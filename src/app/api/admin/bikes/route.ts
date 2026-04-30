@@ -33,3 +33,36 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    await checkAdmin();
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    
+    if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
+    
+    await query('DELETE FROM bikes WHERE id = ?', [id]);
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function PUT(req: Request) {
+  try {
+    await checkAdmin();
+    const body = await req.json();
+    const { id, model_name, type } = body;
+    
+    if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
+    
+    await query(
+      'UPDATE bikes SET model_name = ?, type = ? WHERE id = ?',
+      [model_name, type, id]
+    );
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}

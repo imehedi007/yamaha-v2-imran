@@ -9,17 +9,15 @@ export async function sendSMS(number: string, message: string) {
   }
 
   try {
+    const formData = new FormData();
+    formData.append('api_key', apiKey);
+    formData.append('senderid', senderId);
+    formData.append('number', number);
+    formData.append('message', message);
+
     const response = await fetch('http://bulksmsbd.net/api/smsapi', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: new URLSearchParams({
-        api_key: apiKey,
-        senderid: senderId,
-        number: number,
-        message: message
-      })
+      body: formData
     });
 
     const data = await response.json();

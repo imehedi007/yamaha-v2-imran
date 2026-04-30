@@ -12,7 +12,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 40px rgba(40, 38, 38, 0.5);
   margin-bottom: 32px;
   position: relative;
 }
@@ -69,23 +69,84 @@
   line-height: 1.6;
 }
 
-.actions {
+.actionsGrid {
   display: flex;
-  gap: 16px;
-  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
 }
 
-.secondaryBtn {
-  background: rgba(255, 255, 255, 0.1);
+.rowActions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: white;
-  padding: 16px 24px;
-  border-radius: 8px;
+  padding: 16px;
+  border-radius: 12px;
   font-size: 16px;
   font-weight: 600;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
   flex: 1;
 }
 
-.secondaryBtn:hover {
-  background: rgba(255, 255, 255, 0.2);
+.actionBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.actionBtn:active {
+  transform: scale(0.98);
+}
+
+.actionBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.primaryBtn {
+  background: var(--yamaha-red);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 15px rgba(230, 0, 0, 0.3);
+}
+
+.primaryBtn:hover {
+  background: #ff0000;
+  box-shadow: 0 6px 20px rgba(230, 0, 0, 0.4);
+}
+
+.btnIcon {
+  width: 20px;
+  height: 20px;
+}
+
+.spinnerSmall {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0;
+  }
 }

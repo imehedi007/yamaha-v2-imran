@@ -1,21 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
 
 export default function Home() {
   const router = useRouter();
-  const [step, setStep] = useState<'lead' | 'otp'>('lead');
+  const [step, setStep] = useState<'landing' | 'lead' | 'otp'>('landing');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [dob, setDob] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Auto-redirect if already verified
+  useEffect(() => {
+    if (localStorage.getItem('isAuthenticated') === 'true') {
+      router.push('/quiz');
+    }
+  }, [router]);
+
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !phone) {
+    if (!name || !phone || !dob) {
       setError('Please fill in all fields');
       return;
     }
@@ -57,12 +65,12 @@ export default function Home() {
       const res = await fetch('/api/auth/otp/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, otp }),
+        body: JSON.stringify({ name, phone, dob, otp }),
       });
       const data = await res.json();
 
       if (res.ok) {
-        // Redirect to quiz page
+        localStorage.setItem('isAuthenticated', 'true');
         router.push('/quiz');
       } else {
         setError(data.error || 'Invalid OTP');
@@ -77,12 +85,22 @@ export default function Home() {
   return (
     <main className="page-container">
       <div className={`${styles.card} fade-in`}>
-        <img src="/yamaha-logo.png" alt="Yamaha" className={styles.logo} onError={(e) => e.currentTarget.style.display = 'none'} />
+
         
-        {step === 'lead' ? (
+        {step === 'landing' && (
+          <div className={styles.landingContent}>
+            <h1 className={styles.title}>Yamaha Ride Personality</h1>
+            <p className={styles.subtitle}>Discover your cinematic ride persona matched with the perfect Yamaha bike.</p>
+            <button className="primary-button" onClick={() => setStep('lead')}>
+              Start Journey
+            </button>
+          </div>
+        )}
+
+        {step === 'lead' && (
           <>
-            <h1 className={styles.title}>Discover Your Ride Persona</h1>
-            <p className={styles.subtitle}>Let AI analyze your personality and match you with the perfect Yamaha.</p>
+            <h1 className={styles.title}>Your Information</h1>
+            <p className={styles.subtitle}>Tell us a bit about yourself to begin.</p>
             
             {error && <div className={styles.error}>{error}</div>}
             
@@ -98,6 +116,15 @@ export default function Home() {
                 />
               </div>
               <div className={styles.formGroup}>
+                <label>Date of Birth</label>
+                <input 
+                  type="date" 
+                  value={dob} 
+                  onChange={(e) => setDob(e.target.value)} 
+                  required 
+                />
+              </div>
+              <div className={styles.formGroup}>
                 <label>Phone Number</label>
                 <input 
                   type="tel" 
@@ -108,13 +135,15 @@ export default function Home() {
                 />
               </div>
               <button type="submit" className="primary-button" disabled={loading}>
-                {loading ? 'Sending OTP...' : 'Start Experience'}
+                {loading ? 'Sending OTP...' : 'Continue'}
               </button>
             </form>
           </>
-        ) : (
+        )}
+
+        {step === 'otp' && (
           <div className={styles.otpContainer}>
-            <h1 className={styles.title}>Verify Your Number</h1>
+            <h1 className={styles.title}>Verify Number</h1>
             <p className={styles.subtitle}>Enter the 4-digit code sent to {phone}</p>
             
             {error && <div className={styles.error}>{error}</div>}
@@ -135,9 +164,14 @@ export default function Home() {
                 {loading ? 'Verifying...' : 'Verify & Continue'}
               </button>
             </form>
-            <button className={styles.resendBtn} onClick={() => setStep('lead')} disabled={loading}>
-              Change Phone Number
-            </button>
+            <div className={styles.otpActions}>
+              <button className={styles.resendBtn} onClick={() => setStep('lead')} disabled={loading}>
+                Change Number
+              </button>
+              <button className={styles.resendBtn} onClick={handleSendOtp} disabled={loading} style={{ marginLeft: '16px' }}>
+                Resend OTP
+              </button>
+            </div>
           </div>
         )}
       </div>

@@ -38,3 +38,36 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    await checkAdmin();
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    
+    if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
+    
+    await query('DELETE FROM rules WHERE id = ?', [id]);
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function PUT(req: Request) {
+  try {
+    await checkAdmin();
+    const body = await req.json();
+    const { id, trait_combination, assigned_bike_id } = body;
+    
+    if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
+    
+    await query(
+      'UPDATE rules SET trait_combination = ?, assigned_bike_id = ? WHERE id = ?',
+      [trait_combination, assigned_bike_id, id]
+    );
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
