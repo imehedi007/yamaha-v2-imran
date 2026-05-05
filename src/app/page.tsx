@@ -122,13 +122,19 @@ export default function Home() {
                   />
                 </div>
                 <div className={styles.formGroup}>
-                  <label>Date of Birth</label>
-                  <input 
-                    type="date" 
+                  <label>Age Range</label>
+                  <select 
                     value={dob} 
                     onChange={(e) => setDob(e.target.value)} 
                     required 
-                  />
+                  >
+                    <option value="" disabled>Select your age range</option>
+                    <option value="18-24">18-24</option>
+                    <option value="25-34">25-34</option>
+                    <option value="35-44">35-44</option>
+                    <option value="45-55">45-55</option>
+                    <option value="55+">55+</option>
+                  </select>
                 </div>
                 <div className={styles.formGroup}>
                   <label>Phone Number</label>

@@ -7,7 +7,7 @@
   --bg-surface: #141416;
   --text-primary: #ffffff;
   --text-secondary: #a0a0a0;
-  --accent: var(--yamaha-red);
+  --accent: var(--yamaha-blue);
 }
 
 * {
@@ -35,11 +35,21 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('/hero-bg.png');
-  background-size: cover;
-  background-position: center;
-  filter: brightness(0.4) saturate(1.2);
+  background-color: var(--bg-dark);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(0, 35, 255, 0.3) 0px, transparent 60%),
+    radial-gradient(at 100% 100%, rgba(0, 80, 255, 0.25) 0px, transparent 60%),
+    radial-gradient(at 50% 50%, rgba(0, 20, 255, 0.15) 0px, transparent 70%),
+    radial-gradient(at 80% 20%, rgba(0, 100, 255, 0.2) 0px, transparent 50%),
+    radial-gradient(at 20% 80%, rgba(0, 50, 255, 0.15) 0px, transparent 50%);
+  filter: blur(60px);
   z-index: -2;
+  animation: mesh-move 15s ease-in-out infinite alternate;
+}
+
+@keyframes mesh-move {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.1) rotate(2deg); }
 }
 
 body::after {
@@ -49,7 +59,11 @@ body::after {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(180deg, rgba(10, 10, 12, 0.4) 0%, rgba(10, 10, 12, 0.95) 100%);
+  background: 
+    linear-gradient(180deg, rgba(10, 10, 12, 0) 0%, rgba(10, 10, 12, 0.8) 100%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3%3Cfilter id='noiseFilter'%3%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3%3C/filter%3%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3%3C/svg%3");
+  opacity: 0.08;
+  pointer-events: none;
   z-index: -1;
 }
 
@@ -86,11 +100,11 @@ input, select, textarea {
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(230, 0, 0, 0.2);
+  box-shadow: 0 0 0 2px rgba(0, 35, 255, 0.2);
 }
 
 .primary-button {
-  background: linear-gradient(135deg, var(--yamaha-red) 0%, #a30000 100%);
+  background: linear-gradient(135deg, var(--yamaha-blue) 0%, #0019b3 100%);
   color: white;
   padding: 18px 32px;
   border-radius: 12px;
@@ -98,7 +112,7 @@ input:focus, select:focus, textarea:focus {
   font-weight: 700;
   width: 100%;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 20px rgba(230, 0, 0, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 35, 255, 0.4);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   display: flex;
@@ -109,8 +123,8 @@ input:focus, select:focus, textarea:focus {
 
 .primary-button:hover {
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 30px rgba(230, 0, 0, 0.6);
-  background: linear-gradient(135deg, #ff1a1a 0%, #cc0000 100%);
+  box-shadow: 0 8px 30px rgba(0, 35, 255, 0.6);
+  background: linear-gradient(135deg, #1a3cff 0%, #001cb3 100%);
 }
 
 .primary-button:disabled {
@@ -138,7 +152,7 @@ input:focus, select:focus, textarea:focus {
   left: -10%;
   width: 120%;
   height: 120%;
-  background: radial-gradient(circle at 50% 0%, rgba(230, 0, 0, 0.1) 0%, rgba(10, 10, 12, 0) 60%);
+  background: radial-gradient(circle at 50% 0%, rgba(0, 35, 255, 0.1) 0%, rgba(10, 10, 12, 0) 60%);
   pointer-events: none;
   z-index: -1;
 }

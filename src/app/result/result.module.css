@@ -47,8 +47,8 @@
 
 .badge {
   display: inline-block;
-  background: rgba(230, 0, 0, 0.1);
-  color: var(--yamaha-red);
+  background: rgba(0, 35, 255, 0.1);
+  color: var(--yamaha-blue);
   padding: 6px 12px;
   border-radius: 4px;
   font-size: 12px;
@@ -116,15 +116,15 @@
 }
 
 .primaryBtn {
-  background: var(--yamaha-red);
+  background: var(--yamaha-blue);
   color: white;
   border: none;
-  box-shadow: 0 4px 15px rgba(230, 0, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 35, 255, 0.3);
 }
 
 .primaryBtn:hover {
-  background: #ff0000;
-  box-shadow: 0 6px 20px rgba(230, 0, 0, 0.4);
+  background: #0019ff;
+  box-shadow: 0 6px 20px rgba(0, 35, 255, 0.4);
 }
 
 .btnIcon {

@@ -196,11 +196,11 @@ export default function AdminDashboard() {
         {activeTab === 'users' && (
           <div>
             <table className={styles.table}>
-              <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Images Generated</th><th>Joined</th><th>Actions</th></tr></thead>
+              <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Age Range</th><th>Images Generated</th><th>Joined</th><th>Actions</th></tr></thead>
               <tbody>
                 {users.map(u => (
                   <tr key={u.id}>
-                    <td>{u.id}</td><td>{u.name}</td><td>{u.phone}</td>
+                    <td>{u.id}</td><td>{u.name}</td><td>{u.phone}</td><td>{u.dob || 'N/A'}</td>
                     <td>{u.total_generations}</td>
                     <td>{new Date(u.created_at).toLocaleDateString()}</td>
                     <td>
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
                 <div>
                   <h2 style={{ fontSize: '24px', marginBottom: '8px' }}>User Details: {selectedUser.name}</h2>
-                  <p style={{ color: 'var(--text-secondary)' }}>Phone: {selectedUser.phone} | Joined: {new Date(selectedUser.created_at).toLocaleDateString()}</p>
+                  <p style={{ color: 'var(--text-secondary)' }}>Phone: {selectedUser.phone} | Age: {selectedUser.dob || 'N/A'} | Joined: {new Date(selectedUser.created_at).toLocaleDateString()}</p>
                 </div>
                 <button onClick={() => setSelectedUser(null)} style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
               </div>
