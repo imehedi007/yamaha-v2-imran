@@ -3,7 +3,7 @@ import { query } from '@/lib/server/mysql';
 import { z } from 'zod';
 
 const quizSchema = z.object({
-  traits: z.array(z.string()).min(1)
+  traits: z.array(z.union([z.string(), z.number()])).min(1)
 });
 
 export async function POST(req: Request) {
@@ -17,49 +17,64 @@ export async function POST(req: Request) {
 
     const { traits } = result.data;
     
-    // Join traits in order to maintain Behavior, Destination, Aspiration hierarchy
-    const traitCombination = traits.join(',');
+    // traits is an array of option IDs [behavior_id, destination_id, aspiration_id]
+    const behaviorId = traits[0];
+    const destinationId = traits[1];
+    const aspirationId = traits[2];
 
-    // Find rule matching trait_combination
-    // Rules in DB should follow "Behavior,Destination,Aspiration"
-    let rules = await query<any[]>(
-      `SELECT r.assigned_bike_id, b.model_name, b.type, b.description, b.image_url 
-       FROM rules r 
-       JOIN bikes b ON r.assigned_bike_id = b.id
-       WHERE r.trait_combination = ? LIMIT 1`,
-      [traitCombination]
-    );
-
-    // If no exact match, try matching just the first two (Behavior, Destination)
-    if (rules.length === 0) {
-      const partialCombination = traits.slice(0, 2).join(',') + '%';
-      rules = await query<any[]>(
-        `SELECT r.assigned_bike_id, b.model_name, b.type, b.description, b.image_url 
-         FROM rules r 
-         JOIN bikes b ON r.assigned_bike_id = b.id
-         WHERE r.trait_combination LIKE ? LIMIT 1`,
-        [partialCombination]
-      );
-    }
+    // 1. Pick a bike based on Behavior
+    const mappedBikes = await query<any[]>(`
+      SELECT b.id, b.model_name, b.type, b.description, b.image_url, b.colors
+      FROM option_bike_mappings m
+      JOIN bikes b ON m.bike_id = b.id
+      WHERE m.option_id = ?
+    `, [behaviorId]);
 
     let assignedBike;
-
-    if (rules.length > 0) {
-      assignedBike = rules[0];
+    if (mappedBikes.length > 0) {
+      assignedBike = mappedBikes[Math.floor(Math.random() * mappedBikes.length)];
     } else {
-      // Fallback: pick a default bike (e.g. R15)
-      const fallbackBikes = await query<any[]>('SELECT id as assigned_bike_id, model_name, type, description, image_url FROM bikes WHERE model_name LIKE "%R15%" LIMIT 1');
-      if (fallbackBikes.length > 0) {
-        assignedBike = fallbackBikes[0];
-      } else {
-        const anyBike = await query<any[]>('SELECT id as assigned_bike_id, model_name, type, description, image_url FROM bikes LIMIT 1');
-        assignedBike = anyBike[0];
-      }
+      const anyBike = await query<any[]>('SELECT id, model_name, type, description, image_url, colors FROM bikes LIMIT 1');
+      assignedBike = anyBike[0];
     }
+
+    // 2. Get Destination & Aspiration metadata
+    const [dest, asp] = await Promise.all([
+      query<any[]>('SELECT option_text, metadata FROM quiz_options WHERE id = ?', [destinationId]),
+      query<any[]>('SELECT option_text, metadata FROM quiz_options WHERE id = ?', [aspirationId])
+    ]);
+
+    const aspirationRaw = asp[0]?.metadata;
+    const aspirationData = (typeof aspirationRaw === 'string' ? JSON.parse(aspirationRaw) : aspirationRaw) || {};
+    const preferredColor = aspirationData.color || '';
+    
+    // Parse bike colors
+    let availableColors: string[] = [];
+    try {
+      availableColors = typeof assignedBike.colors === 'string' ? JSON.parse(assignedBike.colors) : (assignedBike.colors || []);
+    } catch(e) {}
+
+    // Logic: Find closest color match or fallback to first available
+    let finalColor = availableColors.length > 0 ? availableColors[0] : (preferredColor || 'Original');
+    if (preferredColor && availableColors.length > 0) {
+      const match = availableColors.find(c => c.toLowerCase().includes(preferredColor.toLowerCase()));
+      if (match) finalColor = match;
+    }
+
+    const destRaw = dest[0]?.metadata;
+    const destData = (typeof destRaw === 'string' ? JSON.parse(destRaw) : destRaw) || {};
+
+    const resultPersona = {
+      behavior: behaviorId,
+      destination: dest[0]?.option_text || 'Unknown',
+      destination_meta: destData,
+      aspiration: asp[0]?.option_text || 'Unknown',
+      aspiration_meta: { ...aspirationData, final_color: finalColor }
+    };
 
     return NextResponse.json({
       success: true,
-      persona: traitCombination,
+      persona: JSON.stringify(resultPersona),
       bike: assignedBike
     });
   } catch (error) {

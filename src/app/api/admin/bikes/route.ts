@@ -22,11 +22,11 @@ export async function POST(req: Request) {
   try {
     await checkAdmin();
     const body = await req.json();
-    const { model_name, type, description, image_url } = body;
+    const { model_name, type, description, image_url, colors } = body;
     
     await query(
-      'INSERT INTO bikes (model_name, type, description, image_url) VALUES (?, ?, ?, ?)',
-      [model_name, type, description || '', image_url || '']
+      'INSERT INTO bikes (model_name, type, description, image_url, colors) VALUES (?, ?, ?, ?, ?)',
+      [model_name, type, description || '', image_url || '', JSON.stringify(colors || [])]
     );
     return NextResponse.json({ success: true });
   } catch (err: any) {
