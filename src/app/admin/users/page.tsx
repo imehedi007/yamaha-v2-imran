@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import styles from '../admin.module.css';
 
 export default function UsersPage() {
@@ -12,8 +13,10 @@ export default function UsersPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [userGenerations, setUserGenerations] = useState<any[]>([]);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     fetchUsers();
   }, [page, limit]);
 
@@ -73,7 +76,6 @@ export default function UsersPage() {
   const handleDeleteGen = async (id: number) => {
     if (confirm('Delete this generation?')) {
       await fetch(`/api/admin/generations?id=${id}`, { method: 'DELETE' });
-      // Refresh user generations
       const res = await fetch(`/api/admin/generations/user?userId=${selectedUser.id}`);
       const data = await res.json();
       if (data.generations) setUserGenerations(data.generations);
@@ -81,6 +83,69 @@ export default function UsersPage() {
   };
 
   const totalPages = Math.ceil(total / limit);
+
+  const Modal = () => {
+    if (!selectedUser) return null;
+    return (
+      <div className={styles.modalOverlay}>
+        <div className={styles.modalContent}>
+          <button className={styles.closeBtn} onClick={() => setSelectedUser(null)}>✕</button>
+          
+          <div className={styles.modalHeader}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h2 style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '-0.5px' }}>{selectedUser.name}</h2>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', marginTop: '4px' }}>Member since {new Date(selectedUser.created_at).toLocaleDateString()}</p>
+              </div>
+              <div style={{ textAlign: 'right', marginRight: '48px' }}>
+                <div style={{ fontSize: '20px', fontWeight: 600, color: '#007aff' }}>{selectedUser.phone}</div>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginTop: '2px' }}>{selectedUser.dob || 'Age Range N/A'}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.modalBody}>
+            <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '20px', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              Generation History ({userGenerations.length})
+            </h3>
+            
+            <div className={styles.genGrid} style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '20px' }}>
+              {userGenerations.map(gen => (
+                <div key={gen.id} className={styles.genCard} style={{ position: 'relative' }}>
+                  <a href={`/result/${gen.hash_id}`} target="_blank" rel="noopener noreferrer">
+                    <img 
+                      src={gen.generated_image_url} 
+                      alt="Gen" 
+                      className={styles.genImage} 
+                      onError={(e) => {
+                        (e.target as any).src = "https://via.placeholder.com/400x533?text=Image+Deleted";
+                      }}
+                    />
+                  </a>
+                  <div style={{ padding: '12px', fontSize: '11px' }}>
+                    <div style={{ fontWeight: 600, color: 'white', marginBottom: '4px' }}>{gen.bike_model}</div>
+                    <div style={{ color: 'rgba(255,255,255,0.4)' }}>{new Date(gen.created_at).toLocaleDateString()}</div>
+                  </div>
+                  <button 
+                    onClick={(e) => { e.preventDefault(); handleDeleteGen(gen.id); }} 
+                    className={styles.dangerBtn}
+                    style={{ position: 'absolute', top: '8px', right: '8px', padding: '4px 6px', fontSize: '10px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {userGenerations.length === 0 && !loading && (
+                <div style={{ color: 'rgba(255,255,255,0.1)', textAlign: 'center', gridColumn: 'span 12', padding: '60px' }}>
+                  No activity recorded for this user yet.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="fade-in">
@@ -145,58 +210,7 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {selectedUser && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent} style={{ maxWidth: '700px', padding: '32px' }}>
-            <button className={styles.closeBtn} onClick={() => setSelectedUser(null)}>✕</button>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-              <div>
-                <h2 style={{ fontSize: '24px', fontWeight: 700 }}>{selectedUser.name}</h2>
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>Member since {new Date(selectedUser.created_at).toLocaleDateString()}</p>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '18px', fontWeight: 600, color: '#007aff' }}>{selectedUser.phone}</div>
-                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>{selectedUser.dob || 'Age Range N/A'}</div>
-              </div>
-            </div>
-
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '24px' }}>
-              <h3 style={{ fontSize: '16px', marginBottom: '16px' }}>History ({userGenerations.length} images)</h3>
-              <div className={styles.genGrid} style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '16px' }}>
-                {userGenerations.map(gen => (
-                  <div key={gen.id} className={styles.genCard} style={{ position: 'relative' }}>
-                    <a href={`/result/${gen.hash_id}`} target="_blank" rel="noopener noreferrer">
-                      <img 
-                        src={gen.generated_image_url} 
-                        alt="Gen" 
-                        className={styles.genImage} 
-                        onError={(e) => {
-                          (e.target as any).src = "https://via.placeholder.com/400x533?text=Image+Deleted";
-                        }}
-                      />
-                    </a>
-                    <div style={{ padding: '8px', fontSize: '10px' }}>
-                      <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{gen.bike_model}</div>
-                      <div style={{ color: 'rgba(255,255,255,0.4)' }}>{new Date(gen.created_at).toLocaleDateString()}</div>
-                    </div>
-                    <button 
-                      onClick={(e) => { e.preventDefault(); handleDeleteGen(gen.id); }} 
-                      className={styles.dangerBtn}
-                      style={{ position: 'absolute', top: '6px', right: '6px', padding: '2px 5px', fontSize: '8px', background: 'rgba(255,0,0,0.8)' }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-                {userGenerations.length === 0 && !loading && (
-                  <div style={{ color: 'rgba(255,255,255,0.1)', textAlign: 'center', width: '100%', padding: '20px' }}>No activity yet.</div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {mounted && createPortal(<Modal />, document.body)}
     </div>
   );
 }

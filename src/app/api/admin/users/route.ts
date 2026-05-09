@@ -41,7 +41,10 @@ export async function GET(req: Request) {
       page,
       limit
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     console.error('Admin users error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
