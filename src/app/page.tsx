@@ -84,97 +84,112 @@ export default function Home() {
 
   return (
     <main className="page-container">
-      <div className={`${styles.card} fade-in`}>
-
-        
-        {step === 'landing' && (
-          <div className={styles.landingContent}>
-            <h1 className={styles.title}>Yamaha Ride Personality</h1>
-            <p className={styles.subtitle}>Discover your cinematic ride persona matched with the perfect Yamaha bike.</p>
+      {step === 'landing' ? (
+        <div className={styles.landingContent}>
+          <div className={styles.badge}>Powered by AI</div>
+          <h1 className={styles.title}>Unleash Your Ride Personality</h1>
+          <p className={styles.subtitle}>
+            Experience the fusion of human spirit and Yamaha engineering. 
+            Discover which machine matches your soul.
+          </p>
+          <div style={{ width: '100%', maxWidth: '320px' }}>
             <button className="primary-button" onClick={() => setStep('lead')}>
-              Start Journey
+              Start The Experience
+              <span>→</span>
             </button>
           </div>
-        )}
+        </div>
+      ) : (
+        <div className={`${styles.card} fade-in`}>
+          {step === 'lead' && (
+            <>
+              <h1 style={{ fontSize: '24px', textAlign: 'center', marginBottom: '8px' }}>Your Profile</h1>
+              <p className={styles.subtitle} style={{ fontSize: '14px', marginBottom: '32px' }}>
+                Join the elite Yamaha community.
+              </p>
+              
+              {error && <div className={styles.error}>{error}</div>}
+              
+              <form onSubmit={handleSendOtp}>
+                <div className={styles.formGroup}>
+                  <label>Full Name</label>
+                  <input 
+                    type="text" 
+                    value={name} 
+                    onChange={(e) => setName(e.target.value)} 
+                    placeholder="Enter your name" 
+                    required 
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Age Range</label>
+                  <select 
+                    value={dob} 
+                    onChange={(e) => setDob(e.target.value)} 
+                    required 
+                  >
+                    <option value="" disabled>Select your age range</option>
+                    <option value="18-24">18-24</option>
+                    <option value="25-34">25-34</option>
+                    <option value="35-44">35-44</option>
+                    <option value="45-55">45-55</option>
+                    <option value="55+">55+</option>
+                  </select>
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Phone Number</label>
+                  <input 
+                    type="tel" 
+                    value={phone} 
+                    onChange={(e) => setPhone(e.target.value)} 
+                    placeholder="e.g. 017XXXXXXXX" 
+                    required 
+                  />
+                </div>
+                <button type="submit" className="primary-button" disabled={loading}>
+                  {loading ? 'Processing...' : 'Send OTP'}
+                </button>
+              </form>
+            </>
+          )}
 
-        {step === 'lead' && (
-          <>
-            <h1 className={styles.title}>Your Information</h1>
-            <p className={styles.subtitle}>Tell us a bit about yourself to begin.</p>
-            
-            {error && <div className={styles.error}>{error}</div>}
-            
-            <form onSubmit={handleSendOtp}>
-              <div className={styles.formGroup}>
-                <label>Full Name</label>
-                <input 
-                  type="text" 
-                  value={name} 
-                  onChange={(e) => setName(e.target.value)} 
-                  placeholder="Enter your name" 
-                  required 
-                />
+          {step === 'otp' && (
+            <div className={styles.otpContainer}>
+              <h1 style={{ fontSize: '24px', textAlign: 'center', marginBottom: '8px' }}>Security Check</h1>
+              <p className={styles.subtitle} style={{ fontSize: '14px', marginBottom: '32px' }}>
+                Enter the code sent to <b>{phone}</b>
+              </p>
+              
+              {error && <div className={styles.error}>{error}</div>}
+              
+              <form onSubmit={handleVerifyOtp}>
+                <div className={styles.formGroup}>
+                  <input 
+                    type="text" 
+                    maxLength={4} 
+                    value={otp} 
+                    onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))} 
+                    placeholder="••••" 
+                    style={{ textAlign: 'center', letterSpacing: '8px', fontSize: '24px' }}
+                    required 
+                  />
+                </div>
+                <button type="submit" className="primary-button" disabled={loading}>
+                  {loading ? 'Verifying...' : 'Verify Identity'}
+                </button>
+              </form>
+              <div className={styles.otpActions}>
+                <button className={styles.resendBtn} onClick={() => setStep('lead')} disabled={loading}>
+                  Change Number
+                </button>
+                <button className={styles.resendBtn} onClick={handleSendOtp} disabled={loading} style={{ marginLeft: '16px' }}>
+                  Resend OTP
+                </button>
               </div>
-              <div className={styles.formGroup}>
-                <label>Date of Birth</label>
-                <input 
-                  type="date" 
-                  value={dob} 
-                  onChange={(e) => setDob(e.target.value)} 
-                  required 
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>Phone Number</label>
-                <input 
-                  type="tel" 
-                  value={phone} 
-                  onChange={(e) => setPhone(e.target.value)} 
-                  placeholder="e.g. 017XXXXXXXX" 
-                  required 
-                />
-              </div>
-              <button type="submit" className="primary-button" disabled={loading}>
-                {loading ? 'Sending OTP...' : 'Continue'}
-              </button>
-            </form>
-          </>
-        )}
-
-        {step === 'otp' && (
-          <div className={styles.otpContainer}>
-            <h1 className={styles.title}>Verify Number</h1>
-            <p className={styles.subtitle}>Enter the 4-digit code sent to {phone}</p>
-            
-            {error && <div className={styles.error}>{error}</div>}
-            
-            <form onSubmit={handleVerifyOtp}>
-              <div className={styles.formGroup}>
-                <input 
-                  type="text" 
-                  maxLength={4} 
-                  value={otp} 
-                  onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))} 
-                  placeholder="••••" 
-                  style={{ textAlign: 'center', letterSpacing: '8px', fontSize: '24px' }}
-                  required 
-                />
-              </div>
-              <button type="submit" className="primary-button" disabled={loading}>
-                {loading ? 'Verifying...' : 'Verify & Continue'}
-              </button>
-            </form>
-            <div className={styles.otpActions}>
-              <button className={styles.resendBtn} onClick={() => setStep('lead')} disabled={loading}>
-                Change Number
-              </button>
-              <button className={styles.resendBtn} onClick={handleSendOtp} disabled={loading} style={{ marginLeft: '16px' }}>
-                Resend OTP
-              </button>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </main>
   );
 }

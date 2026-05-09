@@ -20,7 +20,7 @@
 
 .uploadBox:hover {
   border-color: var(--accent);
-  background: rgba(230, 0, 0, 0.05);
+  background: rgba(0, 35, 255, 0.05);
 }
 
 .icon {

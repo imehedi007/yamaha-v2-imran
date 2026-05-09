@@ -77,20 +77,43 @@ export async function POST(req: Request) {
     const mimeType = photo.type;
 
     // Map persona (Behavior, Destination, Aspiration) to environment/destination
-    const traits = persona.split(',');
-    const behavior = traits[0];
-    const userDestination = traits[1];
-    const aspiration = traits[2];
-
-    const destinationMap: Record<string, string> = {
-      'Urban Nightscapes': 'Dhaka City neon nightscape, rainy streets, futuristic vibes',
-      'Coastal Highways': 'Coxs Bazar Marine Drive, sunset beach background, palm trees',
-      'Mountain Trails': 'Sajek Valley, misty mountains, winding roads, sunrise',
-    };
+    let environment = 'scenic landscape';
+    let behaviorText = 'passionate rider';
+    let bikeColor = 'original Yamaha colors';
     
-    const environment = destinationMap[userDestination] || 'scenic landscape';
+    try {
+      const personaData = JSON.parse(persona);
+      if (personaData.destination_meta?.scene) {
+        environment = personaData.destination_meta.scene;
+      } else {
+        environment = personaData.destination || 'scenic landscape';
+      }
+      
+      if (personaData.aspiration_meta?.final_color) {
+        bikeColor = personaData.aspiration_meta.final_color;
+      } else if (personaData.aspiration_meta?.color) {
+        bikeColor = personaData.aspiration_meta.color;
+      }
+      
+      // Look up behavior text if needed, or just use the ID/Title
+      // For now we'll use the ID or a generic term
+      behaviorText = personaData.behavior || 'dynamic';
+    } catch (e: any) {
+      console.error('Persona parsing error:', e);
+      // Fallback for old simple comma string
+      const traits = persona.split(',');
+      behaviorText = traits[0] || 'passionate';
+      const userDestination = traits[1];
+      const destinationMap: Record<string, string> = {
+        'Urban Nightscapes': 'Dhaka City neon nightscape, rainy streets, futuristic vibes',
+        'Coastal Highways': 'Coxs Bazar Marine Drive, sunset beach background, palm trees',
+        'Mountain Trails': 'Sajek Valley, misty mountains, winding roads, sunrise',
+      };
+      environment = destinationMap[userDestination] || 'scenic landscape';
+    }
 
     // Generate Text Persona Copy
+    console.log('Generating persona copy...');
     const personaCopy = await generatePersonaCopy(persona, bikeModel);
 
     const poseDirection = "Full-body vertical portrait of the rider standing beside or lightly leaning on the motorcycle, one foot grounded, stylish confident body language, premium biker fashion pose, face clearly visible, head uncovered, no helmet on the head.";
@@ -113,17 +136,25 @@ export async function POST(req: Request) {
       
       ENVIRONMENT: ${environment}. 
       
-      MOOD: ${behavior}, with a passion for ${aspiration}.
+      MOOD: ${behaviorText}.
       
-      VEHICLE: A highly detailed, realistic Yamaha ${bikeModel} motorcycle.
+      VEHICLE: A highly detailed, realistic Yamaha ${bikeModel} motorcycle, specifically in the ${bikeColor} color scheme.
       
       REALISM: ${realismDirection}
     `;
 
     // Generate Image
-    const generatedImageUrl = await generateCinematicImage(base64Image, mimeType, persona, bikeModel, environment, finalPromptTemplate);
+    console.log('Starting Gemini image generation...');
+    let generatedImageUrl;
+    try {
+      generatedImageUrl = await generateCinematicImage(base64Image, mimeType, persona, bikeModel, environment, finalPromptTemplate);
+    } catch (aiError: any) {
+      console.error('Gemini Image Generation Error:', aiError);
+      throw new Error(`AI Generation failed: ${aiError.message || 'Unknown AI error'}`);
+    }
 
     // Upload to AWS S3 instead of local public folder
+    console.log('Uploading to S3...');
     const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
     const crypto = await import('crypto');
     
@@ -143,19 +174,26 @@ export async function POST(req: Request) {
 
     const fileName = `generations/gen_${hashId}.jpg`;
     
-    const s3Command = new PutObjectCommand({
-      Bucket: bucketName,
-      Key: fileName,
-      Body: imgBuffer,
-      ContentType: 'image/jpeg',
-      ACL: 'public-read' // Make it publicly accessible
-    });
-    
-    await s3Client.send(s3Command);
+    try {
+      const s3Command = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: fileName,
+        Body: imgBuffer,
+        ContentType: 'image/jpeg',
+        ACL: 'public-read' // Make it publicly accessible
+      });
+      
+      await s3Client.send(s3Command);
+    } catch (s3Error: any) {
+      console.error('S3 Upload Error:', s3Error);
+      throw new Error(`S3 Upload failed: ${s3Error.message || 'Check AWS credentials and Bucket Block Public Access settings'}`);
+    }
+
     const publicS3Url = `https://${bucketName}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${fileName}`;
 
     // Save to database
-    await query<any>(
+    console.log('Saving to database...');
+    await query(
       'INSERT INTO generations (user_id, bike_id, generated_image_url, persona_title, traits_summary, hash_id, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [userId, bikeId, publicS3Url, persona, personaCopy, hashId, 'completed']
     );
